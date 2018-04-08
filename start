@@ -1,0 +1,36 @@
+#!/bin/bash
+BASE_PATH=$(dirname "$(readlink -f "$0")")
+
+function launch-terminal {
+	nc -z 127.0.0.1 $1 || \
+	xterm -title "$2" -e 'bash' -c "$BASE_PATH/optee/soc_term/soc_term $1" &
+}
+
+function wait-for-ports {
+	while ! nc -z 127.0.0.1 $1 || ! nc -z 127.0.0.1 $2; do sleep 1; done
+}
+
+function launch-terminals {
+  launch-terminal 54320 "Normal World"
+  launch-terminal 54321 "Secure World"
+  wait-for-ports 54320 54321
+}
+
+if [[ $1 != "afl" ]]; then
+  cd "$BASE_PATH/optee/build"
+  # yes "q" | make -e QEMU_VIRTFS_ENABLE=y -e QEMU_USERNET_ENABLE=y run-only
+  launch-terminals
+fi
+
+# Linux Kernel:
+# -aflPanicAddr ffff000008174f04 -aflDmesgAddr ffff00000810a7a0 \
+# OPTEE Kernel:
+# -aflPanicAddr e10ea68 -aflDmesgAddr ffff00000810a7a0 \
+# Note: -aflDmesgAddr is not used currently and the value has no effect
+# It was used to log dmesg calls to file. The current implementation is not
+# supported for aarch64.
+"$BASE_PATH/afl/afl-fuzz" -t 30000 -i "$BASE_PATH/afl/inputs-optee-smc" -o "$BASE_PATH/afl/outputs" -QQ -- \
+        "$BASE_PATH/qemu-system-aarch64" \
+        -aflPanicAddr e10ea68 -aflDmesgAddr ffff00000810a7a0 \
+        -aflFile @@
+
