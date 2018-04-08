@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pkill -9 qemu-system-aar
+pkill -9 afl-fuzz 
