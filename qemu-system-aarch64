@@ -1,20 +1,49 @@
 #!/bin/bash
 
 BASE_PATH=$(dirname "$(readlink -f "$0")")
+UUID=$(uuidgen)
 
-QEMULOG=$(mktemp --suffix "-qemu.log" -p "$BASE_PATH")
 
-xterm -e "tail -F $QEMULOG" &
+function run_qemu {
+  cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
+  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64" \
+    -nographic \
+    -serial tcp:127.0.0.1:54320,server -serial tcp:127.0.0.1:54321,server \
+    -machine virt,secure=on -cpu cortex-a57 -m 1057 \
+    -bios "$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin" \
+    -s -semihosting-config enable,target=native -d unimp \
+    -initrd "$BASE_PATH/gen_rootfs/filesystem.cpio.gz" \
+    -kernel "$BASE_PATH/linux/arch/arm64/boot/Image" -no-acpi \
+    -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
+    "$@"
+}
 
-cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
+function secure_world {
+  sleep 7
+  SECURELOG="$BASE_PATH/$UUID.secure.log"
+  SCREENNAME="secure-world-$UUID"
 
-"$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64" \
-  -nographic \
-  -serial tcp:localhost:54320 -serial tcp:localhost:54321 \
-  -machine virt,secure=on -cpu cortex-a57 -m 1057 \
-  -bios "$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin" \
-  -s -semihosting-config enable,target=native -d unimp \
-  -initrd "$BASE_PATH/gen_rootfs/filesystem.cpio.gz" \
-  -kernel "$BASE_PATH/linux/arch/arm64/boot/Image" -no-acpi \
-  -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
-  "$@" > "$QEMULOG" 2>&1
+  screen -dmS "$SCREENNAME" -d -m
+  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54321 | tee \"$SECURELOG\"
+  "
+}
+
+function normal_world {
+  sleep 5
+  NORMALLOG="$BASE_PATH/$UUID.normal.log"
+  SCREENNAME="normal-world-$UUID"
+
+  screen -dmS "$SCREENNAME" -d -m
+  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54320 | tee \"$NORMALLOG\"
+  "
+}
+
+secure_world &
+normal_world &
+
+if [ "$LOG_QEMU" == "y" ]; then
+  QEMULOG="$BASE_PATH/$UUID.qemu.log"
+  run_qemu  > "$QEMULOG" 2>&1
+else
+  run_qemu
+fi
