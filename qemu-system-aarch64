@@ -20,21 +20,21 @@ function run_qemu {
 
 function secure_world {
   sleep 7
-  SECURELOG="$BASE_PATH/$UUID.secure.log"
+  SECURELOG="$BASE_PATH/$UUID.secure.log.gz"
   SCREENNAME="secure-world-$UUID"
 
   screen -dmS "$SCREENNAME" -d -m
-  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54321 | tee \"$SECURELOG\"
+  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54321 | tee >(gzip --stdout > \"$SECURELOG\")
   "
 }
 
 function normal_world {
   sleep 5
-  NORMALLOG="$BASE_PATH/$UUID.normal.log"
+  NORMALLOG="$BASE_PATH/$UUID.normal.log.gz"
   SCREENNAME="normal-world-$UUID"
 
   screen -dmS "$SCREENNAME" -d -m
-  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54320 | tee \"$NORMALLOG\"
+  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54320 | tee >(gzip --stdout > \"$NORMALLOG\")
   "
 }
 
@@ -43,7 +43,7 @@ normal_world &
 
 if [ "$LOG_QEMU" == "y" ]; then
   QEMULOG="$BASE_PATH/$UUID.qemu.log"
-  run_qemu  > "$QEMULOG" 2>&1
+  run_qemu 2>&1 > "$QEMULOG"
 else
   run_qemu
 fi
