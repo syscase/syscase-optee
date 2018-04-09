@@ -6,15 +6,15 @@ QEMULOG=$(mktemp --suffix "-qemu.log" -p "$BASE_PATH")
 
 xterm -e "tail -F $QEMULOG" &
 
-cd "$BASE_PATH/optee/arm-trusted-firmware/build/qemu/release"
+cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
 
-"$BASE_PATH/optee/qemu/aarch64-softmmu/qemu-system-aarch64" \
+"$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64" \
   -nographic \
   -serial tcp:localhost:54320 -serial tcp:localhost:54321 \
   -machine virt,secure=on -cpu cortex-a57 -m 1057 \
-  -bios "$BASE_PATH/optee/arm-trusted-firmware/build/qemu/release/bl1.bin" \
+  -bios "$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin" \
   -s -semihosting-config enable,target=native -d unimp \
-  -initrd "$BASE_PATH/optee/gen_rootfs/filesystem.cpio.gz" \
-  -kernel "$BASE_PATH/optee/linux/arch/arm64/boot/Image" -no-acpi \
+  -initrd "$BASE_PATH/gen_rootfs/filesystem.cpio.gz" \
+  -kernel "$BASE_PATH/linux/arch/arm64/boot/Image" -no-acpi \
   -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
   "$@" > "$QEMULOG" 2>&1
