@@ -2,47 +2,69 @@
 
 BASE_PATH=$(dirname "$(readlink -f "$0")")
 UUID=$(uuidgen)
-
+KERNEL="$BASE_PATH/linux/arch/arm64/boot/Image"
+ROOTFS="$BASE_PATH/gen_rootfs/filesystem.cpio.gz"
+TZBIOS="$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin"
+TASK_BIN="$BASE_PATH/task/$UUID/bin"
+TASK_LOG="$BASE_PATH/task/$UUID/log"
 
 function run_qemu {
   cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
-  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64" \
-    -nographic \
-    -serial tcp:127.0.0.1:54320,server -serial tcp:127.0.0.1:54321,server \
-    -machine virt,secure=on -cpu cortex-a57 -m 1057 \
-    -bios "$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin" \
-    -s -semihosting-config enable,target=native -d unimp \
-    -initrd "$BASE_PATH/gen_rootfs/filesystem.cpio.gz" \
-    -kernel "$BASE_PATH/linux/arch/arm64/boot/Image" -no-acpi \
+  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"         \
+    -nographic                                                  \
+    -serial tcp:127.0.0.1:54320,server                          \
+    -serial tcp:127.0.0.1:54321,server                          \
+    -machine virt,secure=on                                     \
+    -cpu cortex-a57                                             \
+    -m 1057                                                     \
+    -bios "$TZBIOS"                                             \
+    -s                                                          \
+    -semihosting-config enable,target=native                    \
+    -d unimp                                                    \
+    -initrd "$ROOTFS"                                           \
+    -kernel "$KERNEL" -no-acpi                                  \
     -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
     "$@"
 }
 
 function secure_world {
   sleep 7
-  SECURELOG="$BASE_PATH/$UUID.secure.log.gz"
+  SECURELOG="$TASK_LOG/$UUID.secure.log.gz"
   SCREENNAME="secure-world-$UUID"
 
   screen -dmS "$SCREENNAME" -d -m
-  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54321 | tee >(gzip --stdout > \"$SECURELOG\")
+  screen             \
+    -S "$SCREENNAME" \
+    -X stuff "nc 127.0.0.1 54321 | tee >(gzip --stdout > \"$SECURELOG\")
   "
 }
 
 function normal_world {
   sleep 5
-  NORMALLOG="$BASE_PATH/$UUID.normal.log.gz"
+  NORMALLOG="$TASK_LOG/$UUID.normal.log.gz"
   SCREENNAME="normal-world-$UUID"
 
   screen -dmS "$SCREENNAME" -d -m
-  screen -S "$SCREENNAME" -X stuff "nc 127.0.0.1 54320 | tee >(gzip --stdout > \"$NORMALLOG\")
+  screen             \
+    -S "$SCREENNAME" \
+    -X stuff "nc 127.0.0.1 54320 | tee >(gzip --stdout > \"$NORMALLOG\")
   "
 }
+
+mkdir -p "$TASK_LOG"
+mkdir -p "$TASK_BIN"
+cp "$KERNEL" "$TASK_BIN"
+cp "$ROOTFS" "$TASK_BIN"
+cp "$TZBIOS" "$TASK_BIN"
+repo info > "$TASK_BIN/repo-info.txt"
+repo diff > "$TASK_BIN/repo-diff.txt"
+repo status > "$TASK_BIN/repo-status.txt"
 
 secure_world &
 normal_world &
 
 if [ "$LOG_QEMU" == "y" ]; then
-  QEMULOG="$BASE_PATH/$UUID.qemu.log"
+  QEMULOG="$TASK_LOG/$UUID.qemu.log"
   run_qemu 2>&1 > "$QEMULOG"
 else
   run_qemu
