@@ -25,7 +25,7 @@ function make_smcchar {
 
 function make_optee {
   cd "$root/build"
-  make
+  make -e QEMU_VIRTFS_ENABLE=y -e QEMU_USERNET_ENABLE=y
 }
 
 make_afl
