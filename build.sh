@@ -30,6 +30,7 @@ function make_optee {
 
 make_afl
 make_toolchains
+make_optee
 clean_syscase
 make_smcchar
 clean_syscase
