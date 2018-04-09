@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 
 root=$(dirname "$(readlink -f "$0")")
 
@@ -20,7 +20,7 @@ function make_toolchains {
 
 function make_smcchar {
   cd "$root/optee_examples/agent/smcchar"
-  build.sh
+  ./build.sh
 }
 
 function make_optee {
