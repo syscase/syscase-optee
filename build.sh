@@ -2,7 +2,6 @@
 
 root=$(dirname "$(readlink -f "$0")")
 
-
 function clean_syscase {
   cd "$root/optee_examples/agent/syscase"
   make clean
@@ -25,7 +24,7 @@ function make_smcchar {
 
 function make_optee {
   cd "$root/build"
-  make -e QEMU_VIRTFS_ENABLE=y -e QEMU_USERNET_ENABLE=y
+  QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y make
 }
 
 make_afl
