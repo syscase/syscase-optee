@@ -10,20 +10,23 @@ TASK_LOG="$BASE_PATH/task/$UUID/log"
 
 function run_qemu {
   cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
-  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"         \
-    -nographic                                                  \
-    -serial tcp:127.0.0.1:54320,server                          \
-    -serial tcp:127.0.0.1:54321,server                          \
-    -machine virt,secure=on                                     \
-    -cpu cortex-a57                                             \
-    -m 1057                                                     \
-    -bios "$TZBIOS"                                             \
-    -s                                                          \
-    -semihosting-config enable,target=native                    \
-    -d unimp                                                    \
-    -initrd "$ROOTFS"                                           \
-    -kernel "$KERNEL" -no-acpi                                  \
-    -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2' \
+  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"          \
+    -nographic                                                   \
+    -serial tcp:127.0.0.1:54320,server                           \
+    -serial tcp:127.0.0.1:54321,server                           \
+    -machine virt,secure=on                                      \
+    -cpu cortex-a57                                              \
+    -m 1057                                                      \
+    -bios "$TZBIOS"                                              \
+    -s                                                           \
+    -semihosting-config enable,target=native                     \
+    -d unimp                                                     \
+    -initrd "$ROOTFS"                                            \
+    -kernel "$KERNEL" -no-acpi                                   \
+    -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2'  \
+    -fsdev local,id=fsdev0,path="$BASE_PATH",security_model=none \
+    -device virtio-9p-device,fsdev=fsdev0,mount_tag=host         \
+    -netdev user,id=vmnic -device virtio-net-device,netdev=vmnic \
     "$@"
 }
 
