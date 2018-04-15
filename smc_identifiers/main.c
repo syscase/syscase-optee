@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
   printf("ARM_STD_SVC_UID: %lx\n", ARM_STD_SVC_UID);
   printf("ARM_STD_SVC_VERSION: %lx\n", ARM_STD_SVC_VERSION);
 
-  printf("\n# OPTEE SMC call identifiers:\n\n");
+  printf("\n# OPTEE SMC call identifiers (OPTEE):\n\n");
 
   printf("OPTEE_SMC_CALLS_COUNT: %lx\n", OPTEE_SMC_CALLS_COUNT);
   printf("OPTEE_SMC_CALLS_UID: %lx\n", OPTEE_SMC_CALLS_UID);
@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
   printf("OPTEE_SMC_VM_CREATED: %lx\n", OPTEE_SMC_VM_CREATED);
   printf("OPTEE_SMC_VM_DESTROYED: %lx\n", OPTEE_SMC_VM_DESTROYED);
   printf("OPTEE_SMC_CALL_RETURN_FROM_RPC: %lx\n", OPTEE_SMC_CALL_RETURN_FROM_RPC);
+
+  printf("\n# OPTEE SMC call identifiers (Linux TEE Driver):\n\n");
+
   printf("OPTEE_SMC_RETURN_RPC_ALLOC: %lx\n", OPTEE_SMC_RETURN_RPC_ALLOC);
   printf("OPTEE_SMC_RETURN_RPC_FREE: %lx\n", OPTEE_SMC_RETURN_RPC_FREE);
   printf("OPTEE_SMC_RETURN_RPC_FOREIGN_INTR: %lx\n", OPTEE_SMC_RETURN_RPC_FOREIGN_INTR);
