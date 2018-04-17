@@ -19,3 +19,53 @@ esac
 
 exec python3 "$@"
 ```
+
+## Fuzzing
+
+* Add task/config:
+
+```bash
+PANIC_ADDRESS=e10ea68
+DMESG_ADDRESS=ffff00000810a7a0
+```
+
+* Start master:
+
+```bash
+$ screen -R afl-m
+$ FUZZ_ID=00 ./start-master
+```
+
+* Detach and start screens:
+
+```bash
+$ ./log-00-normal.sh
+$ ./log-00-secure.sh
+$ screen -r normal-<UUID>
+```
+
+* Start fuzzing in normal world shell (e.g. SMC):
+
+```bash
+$ insmod /etc/smcchar.ko
+$ optee_exampe_agent -S
+```
+
+* Detach and start secondary:
+
+```bash
+$ screen -R afl-s01
+$ FUZZ_ID=01 ./start-secondary
+```
+
+* Detach and start screens:
+
+```bash
+$ ./log-01-normal.sh
+$ ./log-01-secure.sh
+$ screen -r normal-<UUID>
+```
+
+* Start fuzzing in normal world shell
+
+* Start additional instances with unique `FUZZ_ID`
