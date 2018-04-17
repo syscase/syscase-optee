@@ -1,0 +1,80 @@
+#!/bin/bash
+
+BASE_PATH=$(dirname "$(readlink -f "$0")")
+UUID=$(uuidgen)
+KERNEL="$BASE_PATH/linux/arch/arm64/boot/Image"
+ROOTFS="$BASE_PATH/gen_rootfs/filesystem.cpio.gz"
+TZBIOS="$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin"
+TASK_BIN="$BASE_PATH/task/$UUID/bin"
+TASK_LOG="$BASE_PATH/task/$UUID/log"
+
+function run_qemu {
+  cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
+  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"          \
+    -nographic                                                   \
+    -serial tcp:127.0.0.1:54320,server                           \
+    -serial tcp:127.0.0.1:54321,server                           \
+    -machine virt,secure=on                                      \
+    -cpu cortex-a57                                              \
+    -m 1057                                                      \
+    -bios "$TZBIOS"                                              \
+    -s                                                           \
+    -semihosting-config enable,target=native                     \
+    -d unimp                                                     \
+    -initrd "$ROOTFS"                                            \
+    -kernel "$KERNEL" -no-acpi                                   \
+    -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2'  \
+    -fsdev local,id=fsdev0,path="$BASE_PATH",security_model=none \
+    -device virtio-9p-device,fsdev=fsdev0,mount_tag=host         \
+    -netdev user,id=vmnic -device virtio-net-device,netdev=vmnic \
+    "$@"
+}
+
+function secure_world {
+  SECURELOG="$TASK_LOG/$UUID.secure.log.gz"
+  SCREENNAME="secure-world-$UUID"
+  
+  cat > "$BASE_PATH/log-secure.sh" <<- EOF
+#!/usr/bin/env bash
+screen -dmS "$SCREENNAME" -d -m
+screen             \
+  -S "$SCREENNAME" \
+  -X stuff "nc 127.0.0.1 54321 | tee >(gzip --stdout > \"$SECURELOG\")
+  "
+EOF
+  chmod +x "$BASE_PATH/log-secure.sh"
+}
+
+function normal_world {
+  NORMALLOG="$TASK_LOG/$UUID.normal.log.gz"
+  SCREENNAME="normal-world-$UUID"
+
+  cat > "$BASE_PATH/log-normal.sh" <<- EOF
+#!/usr/bin/env bash
+screen -dmS "$SCREENNAME" -d -m
+screen             \
+  -S "$SCREENNAME" \
+  -X stuff "nc 127.0.0.1 54320 | tee >(gzip --stdout > \"$NORMALLOG\")
+  "
+EOF
+  chmod +x "$BASE_PATH/log-normal.sh"
+}
+
+mkdir -p "$TASK_LOG"
+mkdir -p "$TASK_BIN"
+cp "$KERNEL" "$TASK_BIN"
+cp "$ROOTFS" "$TASK_BIN"
+cp "$TZBIOS" "$TASK_BIN"
+repo info > "$TASK_BIN/repo-info.txt"
+repo diff > "$TASK_BIN/repo-diff.txt"
+repo status > "$TASK_BIN/repo-status.txt"
+
+secure_world &
+normal_world &
+
+if [ "$LOG_QEMU" == "y" ]; then
+  QEMULOG="$TASK_LOG/$UUID.qemu.log"
+  run_qemu "$@" 2>&1 > "$QEMULOG"
+else
+  run_qemu "$@"
+fi
