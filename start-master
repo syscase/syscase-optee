@@ -1,0 +1,21 @@
+#!/bin/bash
+BASE_PATH=$(dirname "$(readlink -f "$0")")
+
+source "$BASE_PATH/task/config"
+
+# AFL refuses to start, since we are using a shell wrapper:
+# This is problematic for short running binaries, but we fuzz
+# a complete OS, so we do not care about QEMU startup time.
+export AFL_SKIP_BIN_CHECK=y
+
+# Linux Kernel:
+# -aflPanicAddr ffff000008174f04 -aflDmesgAddr ffff00000810a7a0 \
+# OPTEE Kernel:
+# -aflPanicAddr e10ea68 -aflDmesgAddr ffff00000810a7a0 \
+# Note: -aflDmesgAddr is not used currently and the value has no effect
+# It was used to log dmesg calls to file. The current implementation is not
+# supported for aarch64.
+"$BASE_PATH/afl/afl-fuzz" -t 30000 -i "$BASE_PATH/task/inputs" -o "$BASE_PATH/task/outputs" -M -QQ -- \
+        "$BASE_PATH/qemu-system-aarch64-afl" \
+        -aflPanicAddr "$PANIC_ADDRESS" -aflDmesgAddr "$DMESG_ADDRESS" \
+        -aflFile @@
