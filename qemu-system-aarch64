@@ -68,7 +68,7 @@ normal_world &
 
 if [ "$LOG_QEMU" == "y" ]; then
   QEMULOG="$TASK_LOG/$UUID.qemu.log"
-  run_qemu 2>&1 > "$QEMULOG"
+  run_qemu "$@" 2>&1 > "$QEMULOG"
 else
-  run_qemu
+  run_qemu "$@"
 fi
