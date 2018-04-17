@@ -19,7 +19,6 @@ function run_qemu {
     -cpu cortex-a57                                              \
     -m 1057                                                      \
     -bios "$TZBIOS"                                              \
-    -s                                                           \
     -semihosting-config enable,target=native                     \
     -d unimp                                                     \
     -initrd "$ROOTFS"                                            \
