@@ -1,0 +1,66 @@
+#!/bin/bash
+
+BASE_PATH=$(dirname "$(readlink -f "$0")")
+UUID=$(uuidgen)
+KERNEL="$BASE_PATH/linux/arch/arm64/boot/Image"
+ROOTFS="$BASE_PATH/gen_rootfs/filesystem.cpio.gz"
+TZBIOS="$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin"
+TASK_BIN="$BASE_PATH/task/$UUID/bin"
+TASK_LOG="$BASE_PATH/task/$UUID/log"
+
+function run_qemu {
+  cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
+  "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"          \
+    -nographic                                                   \
+    -serial tcp:127.0.0.1:54320                                  \
+    -serial tcp:127.0.0.1:54321                                  \
+    -machine virt,secure=on                                      \
+    -cpu cortex-a57                                              \
+    -m 1057                                                      \
+    -bios "$TZBIOS"                                              \
+    -s                                                           \
+    -semihosting-config enable,target=native                     \
+    -d unimp                                                     \
+    -initrd "$ROOTFS"                                            \
+    -kernel "$KERNEL" -no-acpi                                   \
+    -append 'console=ttyAMA0,38400 keep_bootcon root=/dev/vda2'  \
+    -fsdev local,id=fsdev0,path="$BASE_PATH",security_model=none \
+    -device virtio-9p-device,fsdev=fsdev0,mount_tag=host         \
+    -netdev user,id=vmnic -device virtio-net-device,netdev=vmnic \
+    "$@"
+}
+
+function launch-terminal {
+	nc -z 127.0.0.1 $1 || \
+	xterm -title "$2" -e 'bash' -c "$BASE_PATH/soc_term/soc_term $1" &
+}
+
+function wait-for-ports {
+	while ! nc -z 127.0.0.1 $1 || ! nc -z 127.0.0.1 $2; do sleep 1; done
+}
+
+function launch-terminals {
+  launch-terminal 54320 "Normal World"
+  launch-terminal 54321 "Secure World"
+  wait-for-ports 54320 54321
+}
+
+if [ "$TASK_BACKUP" == "y" ]; then
+  mkdir -p "$TASK_LOG"
+  mkdir -p "$TASK_BIN"
+  cp "$KERNEL" "$TASK_BIN"
+  cp "$ROOTFS" "$TASK_BIN"
+  cp "$TZBIOS" "$TASK_BIN"
+  repo info > "$TASK_BIN/repo-info.txt"
+  repo diff > "$TASK_BIN/repo-diff.txt"
+  repo status > "$TASK_BIN/repo-status.txt"
+fi
+
+launch-terminals
+
+if [ "$LOG_QEMU" == "y" ]; then
+  QEMULOG="$TASK_LOG/$UUID.qemu.log"
+  run_qemu "$@" 2>&1 > "$QEMULOG"
+else
+  run_qemu "$@"
+fi
