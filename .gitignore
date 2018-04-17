@@ -18,3 +18,5 @@
 /strace
 /syscase
 /toolchains
+/log-normal.sh
+/log-secure.sh
