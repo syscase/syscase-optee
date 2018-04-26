@@ -45,8 +45,9 @@ function launch-terminals {
   wait-for-ports 54320 54321
 }
 
+mkdir -p "$TASK_LOG"
+
 if [ "$TASK_BACKUP" == "y" ]; then
-  mkdir -p "$TASK_LOG"
   mkdir -p "$TASK_BIN"
   cp "$KERNEL" "$TASK_BIN"
   cp "$ROOTFS" "$TASK_BIN"
