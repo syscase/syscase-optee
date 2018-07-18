@@ -1,6 +1,13 @@
 #!/bin/bash
 BASE_PATH=$(dirname "$(readlink -f "$0")")
 
+export IMPORT_LOG_FILE="$BASE_PATH/task/import.log"
+
+# Add syscase path
+if ! [ -x "$(command -v import-example)" ]; then
+  export PATH="$PATH:$BASE_PATH/syscase/bin"
+fi
+
 source "$BASE_PATH/task/config"
 
 # Linux Kernel:

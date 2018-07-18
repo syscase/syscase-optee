@@ -9,6 +9,7 @@ TASK_BIN="$BASE_PATH/task/$UUID/bin"
 TASK_LOG="$BASE_PATH/task/$UUID/log"
 NPORT=540$FUZZ_ID
 SPORT=541$FUZZ_ID
+
 function run_qemu {
   cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
   "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"          \
