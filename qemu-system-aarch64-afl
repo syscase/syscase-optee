@@ -1,14 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# Disable core dumps
+# You can activate core dumps, but this will fill your disk with core dumps in
+# optee/arm-trusted-firmware/build/qemu/release
+ulimit -c 0
 
 BASE_PATH=$(dirname "$(readlink -f "$0")")
 UUID=$(uuidgen)
 KERNEL="$BASE_PATH/linux/arch/arm64/boot/Image"
 ROOTFS="$BASE_PATH/gen_rootfs/filesystem.cpio.gz"
 TZBIOS="$BASE_PATH/arm-trusted-firmware/build/qemu/release/bl1.bin"
-TASK_BIN="$BASE_PATH/task/$UUID/bin"
-TASK_LOG="$BASE_PATH/task/$UUID/log"
-NPORT=540$FUZZ_ID
-SPORT=541$FUZZ_ID
+TASK_BIN="$BASE_PATH/task/qemu-$UUID/bin"
+TASK_LOG="$BASE_PATH/task/qemu-$UUID/log"
+NPORT=540${FUZZ_ID:-01}
+SPORT=541${FUZZ_ID:-01}
 
 function run_qemu {
   cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
@@ -31,50 +36,71 @@ function run_qemu {
     "$@"
 }
 
+# ncwait_command PORT LOGFILE
+function ncwait_command {
+ echo "source scripts/ncwait.sh; ncwait_log \"$1\" \"$2\""
+}
+
+# xterm_log TITLE PORT LOGFILE
+function xterm_log {
+  xterm -title "$1" -e 'bash' -c "$(ncwait_command "$2" "$3")" &
+}
+
+# xfce4-terminal_log TITLE PORT LOGFILE
+function xfce4-terminal_log {
+  xfce4-terminal --title "$1" -e "bash -c \"$(ncwait_command "$2" "$3")\"" &
+}
+# screen_log SCREENNAME PORT LOGFILE
+function screen_log {
+  screen -dmS "$1" -d -m
+  screen -S "$1" -X stuff "$(ncwait_command "$2" "$3")\n"
+}
+
+# term_log TITLE PORT LOGFILE
+function term_log {
+  case "$QEMU_TERMINAL" in
+    "screen") screen_log "$1" "$2" "$3" ;;
+    "xfce4-terminal") xfce4-terminal_log "$1" "$2" "$3" ;;
+    *) xterm_log "$1" "$2" "$3";;
+  esac
+}
+
+# secure_world LOGFILE
 function secure_world {
-  SECURELOG="$TASK_LOG/$UUID.secure.log.gz"
-  SCREENNAME="secure-world-$UUID"
-  
-  cat > "$BASE_PATH/log-$FUZZ_ID-secure.sh" <<- EOF
-#!/usr/bin/env bash
-screen -dmS "$SCREENNAME" -d -m
-screen             \
-  -S "$SCREENNAME" \
-  -X stuff "nc 127.0.0.1 $SPORT | tee >(gzip --stdout > \"$SECURELOG\")
-  "
-EOF
-  chmod +x "$BASE_PATH/log-$FUZZ_ID-secure.sh"
+  term_log "secure-world-$UUID" "$SPORT" "$1"
 }
 
 function normal_world {
-  NORMALLOG="$TASK_LOG/$UUID.normal.log.gz"
-  SCREENNAME="normal-world-$UUID"
-
-  cat > "$BASE_PATH/log-$FUZZ_ID-normal.sh" <<- EOF
-#!/usr/bin/env bash
-screen -dmS "$SCREENNAME" -d -m
-screen             \
-  -S "$SCREENNAME" \
-  -X stuff "nc 127.0.0.1 $NPORT | tee >(gzip --stdout > \"$NORMALLOG\")
-  "
-EOF
-  chmod +x "$BASE_PATH/log-$FUZZ_ID-normal.sh"
+  term_log "normal-world-$UUID" "$NPORT" "$1"
 }
 
-mkdir -p "$TASK_LOG"
-mkdir -p "$TASK_BIN"
-cp "$KERNEL" "$TASK_BIN"
-cp "$ROOTFS" "$TASK_BIN"
-cp "$TZBIOS" "$TASK_BIN"
-repo info > "$TASK_BIN/repo-info.txt"
-repo diff > "$TASK_BIN/repo-diff.txt"
-repo status > "$TASK_BIN/repo-status.txt"
+function task_backup {
+  mkdir -p "$TASK_BIN"
+  cp "$KERNEL" "$TASK_BIN"
+  cp "$ROOTFS" "$TASK_BIN"
+  cp "$TZBIOS" "$TASK_BIN"
+  repo info > "$TASK_BIN/repo-info.txt"
+  repo diff > "$TASK_BIN/repo-diff.txt"
+  repo status > "$TASK_BIN/repo-status.txt"
+}
 
-secure_world &
-normal_world &
+if [ "$TASK_BACKUP" == "y" ]; then
+  task_backup
+fi
+
+QEMULOG="$TASK_LOG/$UUID.qemu.log"
+
+if [[ ! -z "$AFL_OUTPUT_PATH" ]]; then
+  QEMULOG="$AFL_OUTPUT_PATH/qemu.log"
+  secure_world "$AFL_OUTPUT_PATH/secure.log" &
+  normal_world "$AFL_OUTPUT_PATH/normal.log" &
+else
+  mkdir -p "$TASK_LOG"
+  secure_world "$TASK_LOG/$UUID.secure.log" &
+  normal_world "$TASK_LOG/$UUID.normal.log" &
+fi
 
 if [ "$LOG_QEMU" == "y" ]; then
-  QEMULOG="$TASK_LOG/$UUID.qemu.log"
   run_qemu "$@" 2>&1 > "$QEMULOG"
 else
   run_qemu "$@"

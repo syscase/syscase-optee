@@ -1,7 +1,17 @@
 #!/bin/bash
 BASE_PATH=$(dirname "$(readlink -f "$0")")
 
+export IMPORT_LOG_FILE="$BASE_PATH/task/import.log"
+
+# Add syscase path
+if ! [ -x "$(command -v import-example)" ]; then
+  export PATH="$PATH:$BASE_PATH/syscase/bin"
+fi
+
 source "$BASE_PATH/task/config"
+
+export FUZZ_ID=01
+export AFL_OUTPUT_PATH=${AFL_OUTPUT_PATH:-"$BASE_PATH/task/outputs"}
 
 # Linux Kernel:
 # -aflPanicAddr ffff000008174f04 -aflDmesgAddr ffff00000810a7a0 \

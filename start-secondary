@@ -10,6 +10,10 @@ fi
 
 source "$BASE_PATH/task/config"
 
+export TASK_BACKUP="${TASK_BACKUP:-y}"
+export QEMU_TERMINAL="${QEMU_TERMINAL:-screen}"
+export AFL_OUTPUT_PATH="${AFL_OUTPUT_PATH:-"$BASE_PATH/task/outputs/m$FUZZ_ID"}"
+
 # Linux Kernel:
 # -aflPanicAddr ffff000008174f04 -aflDmesgAddr ffff00000810a7a0 \
 # OPTEE Kernel:
