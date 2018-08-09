@@ -4,6 +4,8 @@
 # You can activate core dumps, but this will fill your disk with core dumps in
 # optee/arm-trusted-firmware/build/qemu/release
 ulimit -c 0
+# Increase virtual memory limit
+ulimit -Sv $[2047 << 10]
 
 BASE_PATH=$(dirname "$(readlink -f "$0")")
 UUID=$(uuidgen)
