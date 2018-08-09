@@ -67,11 +67,11 @@ function term_log {
 
 # secure_world LOGFILE
 function secure_world {
-  term_log "secure-world-$UUID" "$SPORT" "$1"
+  term_log "$FUZZ_ID-secure-world-$UUID" "$SPORT" "$1"
 }
 
 function normal_world {
-  term_log "normal-world-$UUID" "$NPORT" "$1"
+  term_log "$FUZZ_ID-normal-world-$UUID" "$NPORT" "$1"
 }
 
 function task_backup {
