@@ -90,20 +90,13 @@ if [ "$TASK_BACKUP" == "y" ]; then
   task_backup
 fi
 
-QEMULOG="$TASK_LOG/$UUID.qemu.log"
 
-if [[ ! -z "$AFL_OUTPUT_PATH" ]]; then
-  QEMULOG="$AFL_OUTPUT_PATH/qemu.log"
-  secure_world "$AFL_OUTPUT_PATH/secure.log" &
-  normal_world "$AFL_OUTPUT_PATH/normal.log" &
-else
+log_path="$AFL_OUTPUT_PATH/"
+if [[ -z "$AFL_OUTPUT_PATH" ]]; then
+  log_path="$TASK_LOG/$UUID."
   mkdir -p "$TASK_LOG"
-  secure_world "$TASK_LOG/$UUID.secure.log" &
-  normal_world "$TASK_LOG/$UUID.normal.log" &
 fi
 
-if [ "$LOG_QEMU" == "y" ]; then
-  run_qemu "$@" 2>&1 > "$QEMULOG"
-else
-  run_qemu "$@"
-fi
+secure_world "${log_path}secure.log" &
+normal_world "${log_path}normal.log" &
+run_qemu "$@" 2>&1 > "${log_path}qemu.log"
