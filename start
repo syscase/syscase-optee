@@ -22,5 +22,11 @@ export AFL_OUTPUT_PATH=${AFL_OUTPUT_PATH:-"$BASE_PATH/task/outputs"}
 # supported for aarch64.
 "$BASE_PATH/afl/afl-fuzz" -t 30000 -i "$BASE_PATH/task/inputs" -o "$BASE_PATH/task/outputs" -QQ -- \
         "$BASE_PATH/qemu-system-aarch64-afl" \
-        -aflPanicAddr "$PANIC_ADDRESS" -aflDmesgAddr "$DMESG_ADDRESS" \
+        -aflCoverageAddrStart "$COVERAGE_ADDRESS_START" \
+        -aflCoverageAddrEnd "$COVERAGE_ADDRESS_END" \
+        -aflPanicAddr "$PANIC_ADDRESS" \
+        -aflPanicAddr2 "$PANIC_ADDRESS2" \
+        -aflPanicAddr3 "$PANIC_ADDRESS3" \
+        -aflPanicAddr4 "$PANIC_ADDRESS4" \
+        -aflDmesgAddr "$DMESG_ADDRESS" \
         -aflFile @@

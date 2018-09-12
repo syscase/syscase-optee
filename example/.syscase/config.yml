@@ -1,0 +1,17 @@
+# PostgreSQL
+# Requires PostreSQL navive client
+database_uri: 'postgres://syscase@localhost/syscase'
+# SQLite3
+# Requires SQLite3 navive installation
+# database_uri: 'sqlite://development.db'
+
+# Generate session secret for production!
+# Use SecureRandom.hex(64) in Ruby
+session_secret : 'xxxxxxxxxxxxxxxxxxx'
+
+session_key: 'syscase.session'
+session_domain: 'syscase'
+base_path : '/'
+image_base_path: 'assets/images'
+public_path: 'public'
+template_path: 'templates'
