@@ -4,7 +4,7 @@ root=$(dirname "$(readlink -f "$0")")
 
 function make_run_optee {
   cd "$root/build"
-  QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y make run
+  QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y make run-only
 }
 
 make_run_optee

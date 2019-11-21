@@ -13,6 +13,10 @@ source "$BASE_PATH/task/config"
 export TASK_BACKUP="${TASK_BACKUP:-y}"
 export QEMU_TERMINAL="${QEMU_TERMINAL:-screen}"
 export AFL_OUTPUT_PATH="${AFL_OUTPUT_PATH:-"$BASE_PATH/task/outputs/s$FUZZ_ID"}"
+COVERAGE_MODE="${COVERAGE_MODE:-0}"
+SYSCASE_MODE="${SYSCASE_MODE:-1}"
+SYSCASE_JSON_MODE="${SYSCASE_JSON_MODE:-0}"
+export AFL_SKIP_CRASHES=y
 
 # Linux Kernel:
 # -aflPanicAddr ffff000008174f04 -aflDmesgAddr ffff00000810a7a0 \
@@ -21,7 +25,13 @@ export AFL_OUTPUT_PATH="${AFL_OUTPUT_PATH:-"$BASE_PATH/task/outputs/s$FUZZ_ID"}"
 # Note: -aflDmesgAddr is not used currently and the value has no effect
 # It was used to log dmesg calls to file. The current implementation is not
 # supported for aarch64.
-"$BASE_PATH/afl/afl-fuzz" -t 30000 -i "$BASE_PATH/task/inputs" -o "$BASE_PATH/task/outputs" -QQS s$FUZZ_ID -- \
+"$BASE_PATH/afl/afl"           \
+  -c "$COVERAGE_MODE"          \
+  -j "$SYSCASE_JSON_MODE"      \
+  -t 30000+                    \
+  -i "$BASE_PATH/task/inputs"  \
+  -o "$BASE_PATH/task/outputs" \
+  -QQS s$FUZZ_ID -- \
         "$BASE_PATH/qemu-system-aarch64-afl" \
         -aflCoverageAddrStart "$COVERAGE_ADDRESS_START" \
         -aflCoverageAddrEnd "$COVERAGE_ADDRESS_END" \
