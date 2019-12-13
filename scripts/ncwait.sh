@@ -2,7 +2,7 @@
 
 # ncwait PORT
 function ncwait {
-  while ! nc --telnet 127.0.0.1 $1; do sleep 1; done
+  while ! ncat --telnet 127.0.0.1 $1; do sleep 1; done
 }
 
 # ncwait_log PORT LOGFILE
