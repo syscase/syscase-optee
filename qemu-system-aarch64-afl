@@ -21,8 +21,8 @@ function run_qemu {
   cd "$BASE_PATH/arm-trusted-firmware/build/qemu/release"
   "$BASE_PATH/qemu/aarch64-softmmu/qemu-system-aarch64"          \
     -nographic                                                   \
-    -serial tcp:127.0.0.1:$NPORT,server                          \
-    -serial tcp:127.0.0.1:$SPORT,server                          \
+    -serial telnet:127.0.0.1:$NPORT,server                       \
+    -serial telnet:127.0.0.1:$SPORT,server                       \
     -machine virt,secure=on                                      \
     -cpu cortex-a57                                              \
     -m 1057                                                      \
