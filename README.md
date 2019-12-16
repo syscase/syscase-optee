@@ -1,7 +1,7 @@
 # Fuzzing OPTEE with Syscase
 
 * Follow the instructions of `syscase-optee-manifest` to checkout all repos
-* Follow the [OP-TEE Build Guide](https://github.com/OP-TEE/build#7-get-and-build-the-solution) to build OP-TEE.
+* Follow the [OP-TEE Build Guide](https://github.com/OP-TEE/build/tree/2.6.0#7-get-and-build-the-solution) to build OP-TEE.
 
 ## Arch Linux
 Install AUR meta package [op-tee-tools](https://aur.archlinux.org/packages/op-tee-tools/) to install all OP-TEE dependencies. 
