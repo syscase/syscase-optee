@@ -17,6 +17,7 @@
 /soc_term
 /strace
 /syscase
+/syscase-webui
 /toolchains
 /log-normal.sh
 /log-secure.sh
