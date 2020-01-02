@@ -9,7 +9,7 @@ function clean_syscase {
 
 function make_afl {
   cd "$root/afl"
-  make
+  bin/build.sh
 }
 
 function make_toolchains {
